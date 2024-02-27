@@ -42,7 +42,7 @@ func TestAggregation(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	assert(t, isAggregated(record), "should return an agregated record")
+	assert(t, isAggregated(*record), "should return an agregated record")
 	records := extractRecords(record)
 	for i := 0; i < n; i++ {
 		c := strconv.Itoa(i)

@@ -1,11 +1,10 @@
 package producer
 
 import (
-	"log"
-	"os"
+	"context"
 	"time"
 
-	k "github.com/aws/aws-sdk-go/service/kinesis"
+	k "github.com/aws/aws-sdk-go-v2/service/kinesis"
 )
 
 // Constants and default configuration take from:
@@ -24,7 +23,7 @@ const (
 
 // Putter is the interface that wraps the KinesisAPI.PutRecords method.
 type Putter interface {
-	PutRecords(*k.PutRecordsInput) (*k.PutRecordsOutput, error)
+	PutRecords(ctx context.Context, params *k.PutRecordsInput, optFns ...func(*k.Options)) (*k.PutRecordsOutput, error)
 }
 
 // Config is the Producer configuration.
@@ -56,9 +55,6 @@ type Config struct {
 	// Number of requests to sent concurrently. Default to 24.
 	MaxConnections int
 
-	// Logger is the logger used. Default to producer.Logger.
-	Logger Logger
-
 	// Enabling verbose logging. Default to false.
 	Verbose bool
 
@@ -68,9 +64,6 @@ type Config struct {
 
 // defaults for configuration
 func (c *Config) defaults() {
-	if c.Logger == nil {
-		c.Logger = &StdLogger{log.New(os.Stdout, "", log.LstdFlags)}
-	}
 	if c.BatchCount == 0 {
 		c.BatchCount = maxRecordsPerRequest
 	}

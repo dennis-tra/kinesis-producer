@@ -9,28 +9,36 @@ and using the same aggregation format that [KPL][kpl-url] use.
 - [Consumer De-aggregation][de-aggregation]
 
 ### Example
+
 ```go
 package main
 
 import (
+	"context"
 	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/a8m/kinesis-producer"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/kinesis"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/session"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis"
 )
 
 func main() {
-	client := kinesis.New(session.New(aws.NewConfig()))
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	client := kinesis.NewFromConfig(cfg)
 	pr := producer.New(&producer.Config{
 		StreamName:   "test",
 		BacklogCount: 2000,
 		Client:       client
 	})
 
-	pr.Start()
+	pr.Start(context.Background())
 
 	// Handle failures
 	go func() {

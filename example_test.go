@@ -1,32 +1,37 @@
 package producer
 
 import (
-	"log"
-	"os"
+	"context"
+	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/kinesis"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis"
 )
 
 func ExampleSimple() {
-	logger := &StdLogger{log.New(os.Stdout, "", log.LstdFlags)}
-	client := kinesis.New(session.New(aws.NewConfig()))
+
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	client := kinesis.NewFromConfig(cfg)
 	pr := New(&Config{
 		StreamName:   "test",
 		BacklogCount: 2000,
 		Client:       client,
-		Logger:       logger,
 	})
 
-	pr.Start()
+	pr.Start(context.TODO())
 
 	// Handle failures
 	go func() {
 		for r := range pr.NotifyFailures() {
 			// r contains `Data`, `PartitionKey` and `Error()`
-			logger.Error("detected put failure", r.error)
+			slog.Error("detected put failure", r.error)
 		}
 	}()
 
@@ -34,7 +39,7 @@ func ExampleSimple() {
 		for i := 0; i < 5000; i++ {
 			err := pr.Put([]byte("foo"), "bar")
 			if err != nil {
-				logger.Error("error producing", err)
+				slog.Error("error producing", err)
 			}
 		}
 	}()
